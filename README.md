@@ -2,6 +2,13 @@
 
 #### Run your own startup scripts on Raspbian, without ever having touched the Linux partition.
 
+This is a modified/forked version of the original found on GitLab.  I had too many problems to count with the script just silently dying in the middle.  Just extremely brittle and prone to not working.
+Main modifications include:
+  * Changed location of log.  Was /dev/shm, but this got lost every reboot or if script crashed in middle.  Moved to /boot with success
+  * Added additional commetns and logging output.
+  * Script will now try to get through entirety before shutting itself off.   This worked, as mid-script failures don't seem to happen a second time.  
+  * Give the script a few reboot cycles to work through itself.  Within 5 minutes your pi will be customized!
+
 This is a 100% script-based way to run commands at boot. It only uses the FAT32 */boot* partition on the SD card or the .img file. You don't need to change anything about the ext4 (Linux) partition.
 
 This is useful if:
@@ -128,6 +135,13 @@ sudo dd if=/dev/disk2 bs=4 skip=110 count=1 | hexdump -e '1/4 "%02x"'
 which emits the integer in hexadecimal notation, like `402e4a57` (example value, for 2017-04-10-raspbian-jessie).
 
 * append `-02` for the root partition, and put the result in *cmdline.txt* in the form `root=PARTUUID=402e4a57-02`
+
+## Other basic tips and tricks
+Learned a few things the hard way.
+* Matching UUIDs seems important.  Or it just wont' boot.
+* Be careful with assigning the logfile (no spaces in that command) and don't forget your semicolons.
+* It helps to SSH into the pi and run the script as sudo -u root /usr/local/bin/one-time-script.sh  This at least gets you feedback into what it is doing.
+* Because it is so busy setting up directories and mount points, getting a log file out of this thing is tricky at best!
 
 ## References
 I first described this at [StackExchange](https://raspberrypi.stackexchange.com/a/105534/94485) and the [Raspberry Pi Forums](https://www.raspberrypi.org/forums/viewtopic.php?p=1567588#p1567588). Some inspiration has come from Raspbian's built-in [partition resizing script](https://github.com/RPi-Distro/raspi-config/blob/master/usr/lib/raspi-config/init_resize.sh), in particular the mounting commands that make the script run.
