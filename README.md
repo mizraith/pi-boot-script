@@ -147,6 +147,8 @@ Learned a few things the hard way.
 * Be careful with assigning the logfile (no spaces in that command) and don't forget your semicolons.
 * It helps to SSH into the pi and run the script as sudo -u root /usr/local/bin/one-time-script.sh  This at least gets you feedback into what it is doing.
 * Because it is so busy setting up directories and mount points, getting a log file out of this thing is tricky at best!
+* Don't forget that bash scripts prefer tabs over spaces. Have your editor show invisibles.  It matters!
+* Oh, and bash scripts don't like spaces around variable assignments  x=1  NOT x = 1  (or you get "command not found")
 
 ## References
 I first described this at [StackExchange](https://raspberrypi.stackexchange.com/a/105534/94485) and the [Raspberry Pi Forums](https://www.raspberrypi.org/forums/viewtopic.php?p=1567588#p1567588). Some inspiration has come from Raspbian's built-in [partition resizing script](https://github.com/RPi-Distro/raspi-config/blob/master/usr/lib/raspi-config/init_resize.sh), in particular the mounting commands that make the script run.
