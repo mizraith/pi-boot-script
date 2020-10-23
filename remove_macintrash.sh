@@ -1,5 +1,6 @@
 #!/bin/bash
-# Clearn up the macintrash left behind
+# Clearn up the macintrash left behind on a basic mounted disk image
+# cd into directory, then ./remove_macintrash.sh  to run
 
 cd /Volumes/boot
 echo "Removing shadows"

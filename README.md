@@ -87,12 +87,15 @@ You now have an SD card that will self-configure when put into a Pi, or you have
 
 If you're using the .img file, every time you have flashed an SD card with it you can open */boot/one-time-script.conf* on the SD card, to do some configuration for that particular card.
 
-\*\*\* If you mounted the card or image from a Mac, you might like to remove some trash first: in Terminal,
+\*\*\* If you mounted the card or image from a Mac, you might like to remove some macintrash first: in Terminal,
 
 ```bash
-find /Volumes/boot/payload/ -name '._*' -delete
-find /Volumes/boot/payload/ -name '.DS_Store' -delete
+find /Volumes/boot/ -name '._*' -delete
+find /Volumes/boot/ -name '.DS_Store' -delete
+find /Volumes/boot/ -name '.Spotlight*' -delete
 ```
+\*\*\* or you can use the provided script:  ```./remove_macintrash.sh```
+
 
 I'm not sure what kind of trash Windows puts in.
 
@@ -124,6 +127,8 @@ Then ***packages-script.sh*** does this:
 
 ## Warnings and recovery
 You probably wouldn't do this sort of thing to an SD card that holds all your most important files, or that is urgently needed in a production situation. Remember that these scripts are all-powerful: they run as the administrator, so `rm -rf /` will *really* erase everything. To state the obvious, ***I don't accept any responsibility for what you do to your system using this***. Also, it's advisable to test it before using it when it matters.
+* NOTE: it does help to completely erase the card before writing your image file.  Leftover partition data can confuse the file/disk script lines.
+* On a Mac, I found ApplePiBakery.app to be an excellent img transfer program.  Be sure to support the author.
 
 If you have overwritten *cmdline.txt* on the boot partition with another version and the Pi doesn't boot from that card, copy the original cmdline.txt from the *.img* file. Or if you don't have that, correct the partition UUID in cmdline.txt:
 
