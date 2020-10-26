@@ -58,6 +58,14 @@ disk_mgt() {
 	PART_NUM=${ROOT_PART#mmcblk0p};
 	LAST_PARTITION=$(parted /dev/mmcblk0 -ms unit s p | tail -n 1 | tr -d 's');
 	LAST_PART_NUM=$(echo "$LAST_PARTITION" | cut -f 1 -d:);
+	log $'\nlsblk:';
+	lsblk;
+	log $'\nblkid:';
+	blkid;
+	log $'\ndf -a:';
+	df -a;
+	log $'\nparted -l:';
+	parted -l;
 	if [[ "$PART_NUM" -ne 2 || $LAST_PART_NUM -ne 2 ]] 
 	then
 		log "Did not find the standard partition scheme. Looking into it...";
@@ -85,8 +93,8 @@ disk_mgt() {
 			return
 		fi
 	
-		log -n "Create new FAT32 entry in the partition table: ";
-		log -n "NOTE: This only works if you started with a BLANK card."
+		log -n "Using FDISK to create new FAT32 entry in the partition table: ";
+		log -n "NOTE: This only works if you started with a BLANK card.";
 		# I THINK you need to have a freshly formatted card for this to work!!!
 		#
 		# The following gets tripped up super easy if there are mor ethan 2 partitions
@@ -101,25 +109,26 @@ disk_mgt() {
 		n
 		p
 		3
-		$((ROOT_DEV_SIZE - 2048*new_partition_size_MB))
-		$((ROOT_DEV_SIZE - 1))
+		$(($ROOT_DEV_SIZE - 2048 * $new_partition_size_MB))
+		$(($ROOT_DEV_SIZE - 1))
 		t
 		3
 		C
 		w
 		FDEND
-# here-document EOF has to be at beginnign of line without spaces or trailing spaces
-		[[ $? -eq 0 ]] && log OK || log FAILED;
-
+		# instead could we use:   parted /dev/mmcblk0 mkpart primary fat32 <start> <end>
+		# here-document EOF has to be at beginnign of line without spaces or trailing spaces
+		[[ $? -eq 0 ]] && log PARTITION_CREATION_OK || log PARTITION_CREATION_FAILED;
+		
 		# reload the partition table (needed on older kernels)
 		partprobe /dev/mmcblk0;
-
-		# format the new partition
-		log -n "Format the new partition as FAT32: "
-		mkfs.fat -F 32 -n $new_partition_label /dev/mmcblk0p3 && log OK || log FAILED;
+		log "partprobe was a success.";
 	fi
-
+	
 	# We have 3 partitions, but it's not in /etc/fstab or mounted.
+	# format the new partition
+	log -n "Format the new partition as FAT32: ";
+	mkfs.fat -F 32 -n $new_partition_label /dev/mmcblk0p3 && log OK || log FAILED;
 
 	# make sure it is owned by user pi, so it can write to it
 	log -n "Add the new partition to /etc/fstab for mounting at boot: ";
@@ -127,13 +136,23 @@ disk_mgt() {
 	echo "$PART_UUID  /$new_partition_label  vfat  defaults,uid=1000,gid=1000  0  2" >> /etc/fstab && log OK || log FAILED;
 
 	# enlarge the ext4 partition and filesystem
-	log -n "Make the ext4 partition take up the remainder of the SD card: ";
-	parted -m /dev/mmcblk0 u s resizepart 2 $((ROOT_DEV_SIZE-2048*new_partition_size_MB-1)) && log OK || log FAILED;
-	#log -n "Resize the ext4 file system to take up the full partition: ";
-	#log -n "This seems to be causing the script to hang up!  SKIPPING...";
-	#log $(resize2fs /dev/mmcblk0p2;);
-	#resize2fs /dev/mmcblk0p2 && log OK || log FAILED;
-	log -n " Completed resize operation.  Use df -a to check if it is needed";
+	log $'Make the ext4 partition take up the remainder of the SD card:\n';
+	log $(parted -l);
+	ROOT_DEV_SIZE=$(cat /sys/block/mmcblk0/size);
+	parted -m /dev/mmcblk0 u s resizepart 2 $(($ROOT_DEV_SIZE - 2048*new_partition_size_MB - 1)) && log OK || log FAILED;
+	log $(parted -l);
+	log $'Resize the ext4 file system to take up the full partition:\n';
+	#e2fsck -f /dev/mmcblk0p2 && log _CLEANED || log FAILED_CLEAN   # must unmount to clean
+	resize2fs /dev/mmcblk0p2 && log RESIZED_OK || log FAILED_RESIZE;
+	log -n "Completed disk management operations.";
+	log $'\nlsblk:';
+	lsblk;
+	log $'\nblkid:';
+	blkid;
+	log $'\ndf -a:';
+	df -a;
+	log $'\nparted -l:';
+	parted -l;
 }
 
 # 3. PI USER PROFILE SETUP
@@ -275,7 +294,7 @@ systemctl disable systemd-time-wait-sync && log TIME_SYNC_OFF || log TIME_SYNC_F
 
 ## prepare for the package installation script to run on the next boot
 ## This script has its own shutdown logic.
-log -n "Set up automatic running of package installation script on next reboot: ";
+#log -n "Set up automatic running of package installation script on next reboot: ";
 #systemctl enable packages-script.service && log OK || log FAILED;
 
 # Write the log to the boot partition 
